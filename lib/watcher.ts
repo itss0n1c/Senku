@@ -17,7 +17,7 @@ async function _handle_message(msg: Message, bot: Senku) {
 
 	await msg.channel.sendTyping();
 
-	const ctx_msgs = await msg.channel.messages.fetch({ limit: 20, before: msg.id });
+	const ctx_msgs = await msg.channel.messages.fetch({ limit: 10, before: msg.id });
 
 	ctx_msgs.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
