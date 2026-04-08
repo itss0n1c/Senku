@@ -1,4 +1,4 @@
-import { type Collection, GuildMember, type Message } from '@warsam-e/echo';
+import { type Collection, GuildMember, type Message, MessageReferenceType } from '@warsam-e/echo';
 import OpenAI from 'openai';
 import { bot } from '$index.ts';
 import { get_env, get_json, join, proj_root } from '$utils/index.ts';
@@ -9,7 +9,7 @@ const client = new OpenAI({
 });
 
 export async function request(msg: Message, ctx_msgs: Collection<string, Message>) {
-	const messages = [...(await system_prompt(msg)), ..._history_ctx(msg, ctx_msgs)];
+	const messages = [...(await system_prompt(msg)), ...(await _history_ctx(msg, ctx_msgs))];
 	console.log({ messages });
 	const res = await client.chat.completions.create({
 		model: 'deepseek-chat',
@@ -22,21 +22,64 @@ export async function request(msg: Message, ctx_msgs: Collection<string, Message
 
 const _member_user = (msg: Message) => msg.member ?? msg.author;
 
-function _msg_content(msg: Message, orig: Message): OpenAI.Chat.Completions.ChatCompletionMessageParam {
-	if (msg.author.equals(bot.self)) return { role: 'assistant', content: msg.content };
+function _parsed_content(msg: Message) {
+	let content = msg.content;
 
-	const is_author = msg.author.equals(orig.author);
+	for (const user of msg.mentions.users.values()) {
+		content = content.replaceAll(`<@${user.id}>`, `@${user.tag}`);
+	}
 
+	for (const role of msg.mentions.roles.values()) {
+		content = content.replaceAll(`<@&${role.id}>`, `@${role.name}`);
+	}
+
+	for (const channel of msg.mentions.channels.values()) {
+		if (channel.isDMBased()) continue;
+		content = content.replaceAll(`<#${channel.id}>`, `#${channel.name}`);
+	}
+
+	const emoji_regex = /<a?:(\w+):(\d+)>/g;
+	content = content.replaceAll(emoji_regex, (_match, name, id) => {
+		const emoji = msg.client.emojis.cache.get(id);
+		if (!emoji) return `:${name}:`;
+		return `:${emoji.name}:`;
+	});
+
+	return content;
+}
+
+const _msg_json = (msg: Message) => {
 	const author = _member_user(msg);
-
-	const content = JSON.stringify({
+	return {
 		id: msg.id,
 		author: {
 			id: author.id,
 			name: author.displayName,
 			username: msg.author.tag,
 		},
-		text: msg.content,
+		text: _parsed_content(msg),
+	};
+};
+
+async function _msg_content(msg: Message, orig: Message): Promise<OpenAI.Chat.Completions.ChatCompletionMessageParam> {
+	if (msg.author.equals(bot.self)) return { role: 'assistant', content: msg.content };
+
+	const is_author = msg.author.equals(orig.author);
+
+	const author = _member_user(msg);
+
+	const replied_msg =
+		msg.reference?.type === MessageReferenceType.Default && msg.reference.messageId
+			? await msg.channel.messages.fetch(msg.reference.messageId)
+			: undefined;
+
+	const content = JSON.stringify({
+		..._msg_json(msg),
+		...(replied_msg
+			? {
+					referenced_message: _msg_json(replied_msg),
+				}
+			: {}),
 	});
 
 	if (is_author) return { role: 'user', name: author.displayName, content };
@@ -49,14 +92,14 @@ function _msg_content(msg: Message, orig: Message): OpenAI.Chat.Completions.Chat
 	};
 }
 
-function _history_ctx(
+async function _history_ctx(
 	msg: Message,
 	ctx_msgs: Collection<string, Message>,
-): Array<OpenAI.Chat.Completions.ChatCompletionMessageParam> {
+): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> {
 	const messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam> = [];
 
-	for (const m of ctx_msgs.values()) messages.push(_msg_content(m, msg));
-	messages.push(_msg_content(msg, msg));
+	for (const m of ctx_msgs.values()) messages.push(await _msg_content(m, msg));
+	messages.push(await _msg_content(msg, msg));
 
 	return messages;
 }
