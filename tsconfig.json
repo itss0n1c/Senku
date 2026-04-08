@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"noEmit": true,
+		"declaration": false,
+		"forceConsistentCasingInFileNames": true,
+		"lib": ["ESNext"],
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"resolveJsonModule": true,
+		"target": "ESNext",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"allowImportingTsExtensions": true,
+		"paths": {
+			"$*": ["./lib/*"]
+		},
+		"types": ["@types/bun"]
+	},
+	"exclude": ["dist/", "node_modules", "**/node_modules/*"]
+}
