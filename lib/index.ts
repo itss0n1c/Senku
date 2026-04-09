@@ -1,7 +1,9 @@
-import Echo, { GatewayIntentBits, Partials, Team, type User } from '@warsam-e/echo';
+import Echo, { DefaultWebSocketManagerOptions, GatewayIntentBits, Partials, Team, type User } from '@warsam-e/echo';
 import cmds from '$cmds/index.ts';
 import { get_env } from '$utils/index.ts';
 import { watcher } from '$watcher.ts';
+
+(DefaultWebSocketManagerOptions.identifyProperties as Record<string, unknown>).browser = 'Discord iOS';
 
 export class Senku extends Echo {
 	constructor() {
