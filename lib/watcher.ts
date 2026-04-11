@@ -11,13 +11,17 @@ async function _handle_message(msg: Message, bot: Senku) {
 
 	if (!msg.channel.isSendable()) return;
 
-	if (!msg.mentions.has(bot.self)) {
+	const msg_says_name = msg.content.toLocaleLowerCase().includes(bot.self.username.toLowerCase());
+	if (!msg.mentions.has(bot.self) && !msg_says_name) {
 		if (!msg.channel.isDMBased()) return;
 	}
 
 	await msg.channel.sendTyping();
 
-	const ctx_msgs = await msg.channel.messages.fetch({ limit: 10, before: msg.id });
+	const ctx_msgs = await msg.channel.messages.fetch({
+		limit: 10,
+		before: msg.id,
+	});
 
 	ctx_msgs.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 

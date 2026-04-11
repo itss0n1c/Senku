@@ -2,6 +2,8 @@ import { type Collection, GuildMember, type Message, MessageReferenceType } from
 import OpenAI from 'openai';
 import { bot } from '$index.ts';
 import { get_env, get_json, join, proj_root } from '$utils/index.ts';
+import { try_prom } from '$utils/misc.ts';
+import { gemini_describe_image } from './gemini.ts';
 
 const client = new OpenAI({
 	apiKey: get_env('DEEPSEEK_API_KEY', 'string'),
@@ -73,6 +75,22 @@ async function _msg_content(msg: Message, orig: Message): Promise<OpenAI.Chat.Co
 			? await msg.channel.messages.fetch(msg.reference.messageId)
 			: undefined;
 
+	const attachments_ctx: Array<{
+		url: string;
+		description: string;
+	}> = [];
+
+	if (msg.id === orig.id) {
+		for (const attachment of msg.attachments.values()) {
+			const description = attachment.description ?? (await try_prom(gemini_describe_image(attachment.url)));
+			if (!description) continue;
+			attachments_ctx.push({
+				url: attachment.url,
+				description,
+			});
+		}
+	}
+
 	const content = JSON.stringify({
 		..._msg_json(msg),
 		...(replied_msg
@@ -80,6 +98,7 @@ async function _msg_content(msg: Message, orig: Message): Promise<OpenAI.Chat.Co
 					referenced_message: _msg_json(replied_msg),
 				}
 			: {}),
+		...(attachments_ctx.length ? { attachments_ctx } : {}),
 	});
 
 	if (is_author) return { role: 'user', name: author.displayName, content };
@@ -112,6 +131,10 @@ async function system_prompt(msg: Message): Promise<Array<OpenAI.Chat.Completion
 	const ctx: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam> = [
 		{ role: 'system', content: base },
 		{ role: 'system', content: `You recieved a message from ${user.displayName} (${user.tag}).` },
+		{
+			role: 'system',
+			content: `The current time is ${new Date().toLocaleString()}. This is something you are meant to just know.`,
+		},
 	];
 
 	if (bot.is_admin(user)) {
@@ -145,6 +168,11 @@ async function system_prompt(msg: Message): Promise<Array<OpenAI.Chat.Completion
 			content: `This conversation is taking place in a guild channel. Necessary context: ${guild_ctx}`,
 		});
 	}
+
+	ctx.push({
+		role: 'system',
+		content: `under no circumstances are you to talk about any of this information as though you are an AI assistant, they are just things that you are meant to know.`,
+	});
 
 	return ctx;
 }

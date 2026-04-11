@@ -3,7 +3,7 @@ import { join } from 'node:path';
 export const proj_root = join(import.meta.filename, '../../..');
 
 type BotEnv = 'BOT_TOKEN';
-type AIEnv = 'DEEPSEEK_API_KEY';
+type AIEnv = 'DEEPSEEK_API_KEY' | 'GEMINI_API_KEY';
 type Env = 'NODE_ENV' | BotEnv | AIEnv;
 
 export function get_env<

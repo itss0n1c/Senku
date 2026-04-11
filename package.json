@@ -1,18 +1,22 @@
 {
-	"name": "senku",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"dev": "bun --watch ./lib/index.ts",
-		"start": "bun ./lib/index.ts",
-		"check": "bunx @biomejs/biome check"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.4.10",
-		"@types/bun": "1.3.11"
-	},
-	"dependencies": {
-		"@warsam-e/echo": "7.4.2",
-		"openai": "^6.33.0"
-	}
+  "name": "senku",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch ./lib/index.ts",
+    "start": "bun ./lib/index.ts",
+    "check": "bunx @biomejs/biome check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.10",
+    "@types/bun": "1.3.11"
+  },
+  "dependencies": {
+    "@google/genai": "^1.49.0",
+    "@warsam-e/echo": "7.4.2",
+    "openai": "^6.33.0"
+  },
+  "trustedDependencies": [
+    "protobufjs"
+  ]
 }
