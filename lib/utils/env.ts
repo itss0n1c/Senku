@@ -4,7 +4,8 @@ export const proj_root = join(import.meta.filename, '../../..');
 
 type BotEnv = 'BOT_TOKEN';
 type AIEnv = 'DEEPSEEK_API_KEY' | 'GEMINI_API_KEY';
-type Env = 'NODE_ENV' | BotEnv | AIEnv;
+type MiscEnv = 'SEARXNG_BASE_URL';
+type Env = 'NODE_ENV' | BotEnv | AIEnv | MiscEnv;
 
 export function get_env<
 	T extends 'string' | 'boolean' | 'number' = 'string',
