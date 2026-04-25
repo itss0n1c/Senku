@@ -30,9 +30,11 @@ async function _handle_message(msg: Message, bot: Senku) {
 
 	if (!(await _handle_response(msg, msg.channel, ctx_msgs))) return;
 
+	if (msg.channel.isDMBased()) return;
 	const msgs = await msg.channel.awaitMessages({
 		max: 1,
-		time: 100 * 60, // 1 minute
+		time: 100 * 60 * 1000, // 1 minute
+		filter: (m) => !m.author.equals(bot.self),
 	});
 	const recent = msgs.first();
 	if (!recent) return;

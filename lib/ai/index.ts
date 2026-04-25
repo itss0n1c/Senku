@@ -14,7 +14,8 @@ import { bot } from '$index.ts';
 import { get_env, get_json, join, proj_root } from '$utils/index.ts';
 import { try_prom } from '$utils/misc.ts';
 import { gemini_describe_image } from './gemini.ts';
-import tools from './tools/index.ts';
+
+// import tools from './tools/index.ts';
 
 const client = new OpenAI({
 	apiKey: get_env('DEEPSEEK_API_KEY', 'string'),
@@ -29,7 +30,7 @@ const instructions = await Bun.file(join(proj_root, 'assets/system.md')).text();
 
 const agent = new Agent({
 	name: 'Senku',
-	model: 'deepseek-chat',
+	model: 'deepseek-v4-pro',
 	instructions,
 	// tools,
 });
