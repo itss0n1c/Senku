@@ -30,7 +30,7 @@ const instructions = await Bun.file(join(proj_root, 'assets/system.md')).text();
 
 const agent = new Agent({
 	name: 'Senku',
-	model: 'deepseek-v4-pro',
+	model: 'deepseek-v4-flash',
 	instructions,
 	// tools,
 });
