@@ -11,14 +11,14 @@ import {
 import { type Collection, GuildMember, type Message, MessageReferenceType } from '@warsam-e/echo';
 import OpenAI from 'openai';
 import { bot } from '$index.ts';
-import { get_env, get_json, join, proj_root } from '$utils/index.ts';
+import { env, get_json, join, proj_root } from '$utils/index.ts';
 import { try_prom } from '$utils/misc.ts';
 import { gemini_describe_image } from './gemini.ts';
 
 // import tools from './tools/index.ts';
 
 const client = new OpenAI({
-	apiKey: get_env('DEEPSEEK_API_KEY', 'string'),
+	apiKey: env.DEEPSEEK_API_KEY,
 	baseURL: 'https://api.deepseek.com/beta',
 	logLevel: 'debug',
 });
@@ -193,6 +193,6 @@ export const stats = () =>
 		balance_infos: Array<Record<'currency' | 'total_balance' | 'granted_balance' | 'topped_up_balance', string>>;
 	}>('https://api.deepseek.com/user/balance', {
 		headers: {
-			Authorization: `Bearer ${get_env('DEEPSEEK_API_KEY', 'string')}`,
+			Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`,
 		},
 	});

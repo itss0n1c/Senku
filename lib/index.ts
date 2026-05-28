@@ -1,6 +1,6 @@
 import Echo, { DefaultWebSocketManagerOptions, GatewayIntentBits, Partials, Team, type User } from '@warsam-e/echo';
 import cmds from '$cmds/index.ts';
-import { get_env } from '$utils/index.ts';
+import { env } from '$utils/index.ts';
 import { watcher } from '$watcher.ts';
 
 (DefaultWebSocketManagerOptions.identifyProperties as Record<string, unknown>).browser = 'Discord iOS';
@@ -63,7 +63,7 @@ export class Senku extends Echo {
 	}
 
 	static async start() {
-		const bot = await new Senku().registerCommands(cmds).init(get_env('BOT_TOKEN'));
+		const bot = await new Senku().registerCommands(cmds).init(env.BOT_TOKEN);
 		watcher(bot);
 
 		return bot;

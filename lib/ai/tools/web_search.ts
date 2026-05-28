@@ -1,6 +1,6 @@
 import { tool } from '@openai/agents';
 import z from 'zod';
-import { get_env, get_json } from '$utils/index.ts';
+import { env, get_json } from '$utils/index.ts';
 
 const searchWebTool = tool({
 	name: 'search_web',
@@ -47,7 +47,7 @@ type SearchResult = {
 };
 
 async function searchSearxng(query: string): Promise<SearchResult[]> {
-	const url = new URL('/search', get_env('SEARXNG_BASE_URL'));
+	const url = new URL('/search', env.SEARXNG_BASE_URL);
 	url.searchParams.set('q', query);
 	url.searchParams.set('format', 'json');
 	url.searchParams.set('language', 'en');
@@ -73,6 +73,7 @@ async function searchSearxng(query: string): Promise<SearchResult[]> {
 		},
 	});
 
+	// biome-ignore lint/suspicious/noExplicitAny: The SearXNG response format is not well-defined, so we have to use `any` here.
 	return (res.results ?? []).slice(0, 5).map((r: any) => ({
 		title: r.title ?? '',
 		url: r.url ?? '',

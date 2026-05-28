@@ -1,4 +1,4 @@
-import { get_env, get_json } from '$utils/index.ts';
+import { env, get_json } from '$utils/index.ts';
 
 type SearxNGResult = {
 	title?: string;
@@ -35,7 +35,7 @@ export async function search_web(query: string, max_results = 5): Promise<WebSea
 	const trimmed_query = query.trim();
 	if (!trimmed_query) throw new Error('Search query cannot be empty');
 
-	const base_url = get_env('SEARXNG_BASE_URL', 'string');
+	const base_url = env.SEARXNG_BASE_URL;
 	const url = new URL('/search', base_url);
 
 	url.searchParams.set('q', trimmed_query);

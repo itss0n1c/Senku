@@ -1,7 +1,7 @@
 import { createPartFromBase64, createPartFromText, GoogleGenAI } from '@google/genai';
-import { get_env } from '$utils/index.ts';
+import { env } from '$utils/index.ts';
 
-const ai = new GoogleGenAI({ apiKey: get_env('GEMINI_API_KEY', 'string') });
+const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
 async function image_part_from_url(image_url: string) {
 	const res = await fetch(image_url);
