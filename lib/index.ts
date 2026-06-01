@@ -1,5 +1,13 @@
-import Echo, { DefaultWebSocketManagerOptions, GatewayIntentBits, Partials, Team, type User } from '@warsam-e/echo';
+import Echo, {
+	bold,
+	DefaultWebSocketManagerOptions,
+	GatewayIntentBits,
+	Partials,
+	Team,
+	type User,
+} from '@warsam-e/echo';
 import cmds from '$cmds/index.ts';
+import { emojis } from '$emojis.ts';
 import { env } from '$utils/index.ts';
 import { watcher } from '$watcher.ts';
 
@@ -55,6 +63,10 @@ export class Senku extends Echo {
 		const team = this.application.owner;
 		if (!(team instanceof Team)) throw new Error('Application owner is not a team');
 		return team.members.some((m) => m.user.equals(user));
+	}
+
+	get thinking() {
+		return `${emojis.typing} ${bold(this.name)} is thinking...`;
 	}
 
 	get self() {

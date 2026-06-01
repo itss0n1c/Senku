@@ -1,4 +1,6 @@
-import discord from './discord/index.ts';
+// import discord from './discord/index.ts';
 import web_search from './web_search.ts';
 
-export default [...web_search, ...discord];
+export const tools = {
+	...web_search,
+};

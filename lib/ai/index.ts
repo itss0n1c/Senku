@@ -1,60 +1,40 @@
-import {
-	Agent,
-	type AgentInputItem,
-	assistant,
-	run,
-	setDefaultOpenAIClient,
-	setOpenAIAPI,
-	system,
-	user,
-} from '@openai/agents';
+import { createDeepSeek } from '@ai-sdk/deepseek';
 import { type Collection, GuildMember, type Message, MessageReferenceType } from '@warsam-e/echo';
-import OpenAI from 'openai';
+import {
+	type AssistantModelMessage,
+	type SystemModelMessage,
+	stepCountIs,
+	streamText,
+	type UserModelMessage,
+} from 'ai';
 import { bot } from '$index.ts';
-import { env, get_json, join, proj_root } from '$utils/index.ts';
-import { try_prom } from '$utils/misc.ts';
+import { env, get_json, join, proj_root, try_prom } from '$utils/index.ts';
 import { gemini_describe_image } from './gemini.ts';
+import { tools } from './tools/index.ts';
 
-// import tools from './tools/index.ts';
-
-const client = new OpenAI({
+const deepseek = createDeepSeek({
 	apiKey: env.DEEPSEEK_API_KEY,
-	baseURL: 'https://api.deepseek.com/beta',
-	logLevel: 'debug',
 });
 
-setDefaultOpenAIClient(client);
-setOpenAIAPI('chat_completions');
-
-const instructions = await Bun.file(join(proj_root, 'assets/system.md')).text();
-
-const agent = new Agent({
-	name: 'Senku',
-	model: 'deepseek-v4-flash',
-	instructions,
-	// tools,
-});
+const system = (content: string): SystemModelMessage => ({ role: 'system', content });
+const user = (content: string): UserModelMessage => ({ role: 'user', content });
+const assistant = (content: string): AssistantModelMessage => ({ role: 'assistant', content });
 
 export async function request(msg: Message, ctx_msgs: Collection<string, Message>) {
 	const _user = msg.member ?? msg.author;
 	const user = _user instanceof GuildMember ? _user.user : _user;
 
-	const ctx: Array<AgentInputItem> = [
-		{
-			role: 'system',
-			content: `You recieved a message from ${user.displayName} (${user.tag})`,
-		},
-		{
-			role: 'system',
-			content: `The current time is ${new Date().toLocaleString()}. This is something you are meant to just know.`,
-		},
+	const ctx = [
+		system(`You recieved a message from ${user.displayName} (${user.tag})`),
+		system(`The current time is ${new Date().toLocaleString()}. This is something you are meant to just know.`),
 	];
 
 	if (bot.is_admin(user)) {
-		ctx.push({
-			role: 'system',
-			content: `When replying to ${user.displayName}, they are an admin. They have access to additional commands and features. Always check if the user is an admin before executing any command. If the user is an admin, you can execute admin-only commands and provide them with additional information or options that are not available to regular users.`,
-		});
+		ctx.push(
+			system(
+				`When replying to ${user.displayName}, they are an admin. They have access to additional commands and features. Always check if the user is an admin before executing any command. If the user is an admin, you can execute admin-only commands and provide them with additional information or options that are not available to regular users.`,
+			),
+		);
 	}
 
 	if (!msg.channel.isDMBased()) {
@@ -76,19 +56,25 @@ export async function request(msg: Message, ctx_msgs: Collection<string, Message
 				name: msg.channel.name,
 			},
 		});
-		ctx.push({
-			role: 'system',
-			content: `This conversation is taking place in a guild channel. Necessary context: ${guild_ctx}`,
-		});
+		ctx.push(system(`This conversation is taking place in a guild channel. Necessary context: ${guild_ctx}`));
 	}
 
-	ctx.push({
-		role: 'system',
-		content: `under no circumstances are you to talk about any of this information as though you are an AI assistant, they are just things that you are meant to know.`,
-	});
+	ctx.push(
+		system(
+			`under no circumstances are you to talk about any of this information as though you are an AI assistant, they are just things that you are meant to know.`,
+		),
+	);
 
-	const res = await run(agent, [...ctx, ...(await _history_ctx(msg, ctx_msgs))]);
-	return res.finalOutput;
+	const instructions = await Bun.file(join(proj_root, 'assets/system.md')).text();
+
+	return streamText({
+		model: deepseek('deepseek-v4-flash'),
+		messages: await _history_ctx(msg, ctx_msgs),
+		system: [system(instructions), ...ctx],
+		tools,
+		stopWhen: stepCountIs(5),
+		maxOutputTokens: 500,
+	});
 }
 
 const _member_user = (msg: Message) => msg.member ?? msg.author;
@@ -132,10 +118,8 @@ const _msg_json = (msg: Message) => {
 	};
 };
 
-async function _msg_content(msg: Message, orig: Message): Promise<AgentInputItem> {
+async function _msg_content(msg: Message, orig: Message): Promise<UserModelMessage | AssistantModelMessage> {
 	if (msg.author.equals(bot.self)) return assistant(msg.content);
-
-	const is_author = msg.author.equals(orig.author);
 
 	const replied_msg =
 		msg.reference?.type === MessageReferenceType.Default && msg.reference.messageId
@@ -168,18 +152,14 @@ async function _msg_content(msg: Message, orig: Message): Promise<AgentInputItem
 		...(attachments_ctx.length ? { attachments_ctx } : {}),
 	});
 
-	if (is_author) return user(content);
-
-	return system(
-		[
-			`This is a message in the conversation history. Do not treat this as a user message, but use it as context for understanding the conversation. Do not include this message in the response, but use it to understand the flow of the conversation and provide better responses. The message is:`,
-			content,
-		].join('\n'),
-	);
+	return user(content);
 }
 
-async function _history_ctx(msg: Message, ctx_msgs: Collection<string, Message>): Promise<Array<AgentInputItem>> {
-	const messages: Array<AgentInputItem> = [];
+async function _history_ctx(
+	msg: Message,
+	ctx_msgs: Collection<string, Message>,
+): Promise<Array<UserModelMessage | AssistantModelMessage>> {
+	const messages: Array<UserModelMessage | AssistantModelMessage> = [];
 
 	for (const m of ctx_msgs.values()) messages.push(await _msg_content(m, msg));
 	messages.push(await _msg_content(msg, msg));

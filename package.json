@@ -11,13 +11,13 @@
 		"@types/bun": "1.3.13"
 	},
 	"dependencies": {
+		"@ai-sdk/deepseek": "2.0.35",
 		"@google/genai": "2.6.0",
-		"@openai/agents": "0.11.5",
-		"@openai/agents-core": "0.11.5",
 		"@warsam-e/echo": "7.4.2",
+		"ai": "6.0.194",
 		"arkenv": "0.11.0",
 		"arktype": "2.2.0",
-		"openai": "6.39.0",
+		"searxng": "0.0.5",
 		"zod": "4.4.3"
 	},
 	"trustedDependencies": [

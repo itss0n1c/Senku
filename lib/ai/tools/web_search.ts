@@ -1,31 +1,44 @@
-import { tool } from '@openai/agents';
+import { tool } from 'ai';
+import { SearxngService } from 'searxng';
 import z from 'zod';
-import { env, get_json } from '$utils/index.ts';
 
-const searchWebTool = tool({
-	name: 'search_web',
-	description: 'Search the web for current information using SearXNG.',
-	parameters: z.object({
-		query: z.string().min(2).describe('The search query.'),
-	}),
-	execute: async ({ query }) => {
-		console.log(`[search_web] Executing search for query: "${query}"`);
-		const results = await searchSearxng(query);
-		return {
-			query,
-			results,
-			note: 'Top 5 search results from SearXNG.',
-		};
+const service = new SearxngService({
+	baseURL: 'https://searxng.s0n.dev',
+	defaultSearchParams: {
+		format: 'json',
+		lang: 'en',
+		safesearch: 1,
+	},
+	defaultRequestHeaders: {
+		'Content-Type': 'application/json',
 	},
 });
 
-const openWebpageTool = tool({
-	name: 'open_webpage',
+export const searxng = (query: string) =>
+	service.search(query).then((x) =>
+		x.results.slice(0, 5).map((result) => ({
+			title: result.title,
+			url: result.url,
+			content: result.content,
+			engine: result.engine,
+		})),
+	);
+
+const webSearch = tool({
+	description: 'Search the web for information, websites, documentation, people, companies, news, and recent events.',
+	inputSchema: z.object({
+		query: z.string().describe('The search query. Be specific to get better results.'),
+	}),
+
+	execute: async ({ query }) => searxng(query),
+});
+
+const openWebpage = tool({
 	description: 'Open a webpage URL and extract readable text content.',
-	parameters: z.object({
+	inputSchema: z.object({
 		url: z.string().describe('The webpage URL to open.'),
 	}),
-	async execute({ url }) {
+	execute: async ({ url }) => {
 		console.log(`[open_webpage] Fetching and extracting text from URL: ${url}`);
 		const text = await fetchPageText(url);
 
@@ -37,50 +50,7 @@ const openWebpageTool = tool({
 	},
 });
 
-export default [searchWebTool, openWebpageTool];
-
-type SearchResult = {
-	title: string;
-	url: string;
-	content: string;
-	engine?: string;
-};
-
-async function searchSearxng(query: string): Promise<SearchResult[]> {
-	const url = new URL('/search', env.SEARXNG_BASE_URL);
-	url.searchParams.set('q', query);
-	url.searchParams.set('format', 'json');
-	url.searchParams.set('language', 'en');
-	url.searchParams.set('safesearch', '1');
-
-	const res = await get_json<{
-		query?: string;
-		number_of_results?: number;
-		results?: Array<{
-			title?: string;
-			url?: string;
-			content?: string;
-			engine?: string;
-			score?: number;
-			publishedDate?: string;
-		}>;
-		answers?: string[];
-		infoboxes?: Array<Record<string, unknown>>;
-	}>(url.toString(), {
-		headers: {
-			'User-Agent': 'my-agents-app/1.0',
-			Accept: 'application/json',
-		},
-	});
-
-	// biome-ignore lint/suspicious/noExplicitAny: The SearXNG response format is not well-defined, so we have to use `any` here.
-	return (res.results ?? []).slice(0, 5).map((r: any) => ({
-		title: r.title ?? '',
-		url: r.url ?? '',
-		content: r.content ?? '',
-		engine: r.engine ?? undefined,
-	}));
-}
+export default { webSearch, openWebpage };
 
 async function fetchPageText(url: string): Promise<string> {
 	const parsed = new URL(url);

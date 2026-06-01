@@ -1,10 +1,13 @@
-import { AttachmentBuilder, type Collection, Events, type Message, type SendableChannels } from '@warsam-e/echo';
-import type { Senku } from '$index.ts';
+import { type Collection, Events, type Message, type SendableChannels, type Snowflake } from '@warsam-e/echo';
+import { bot, type Senku } from '$index.ts';
+import { MessageStreamer } from '$stream.ts';
 import { request } from './ai/index.ts';
 
 export function watcher(bot: Senku) {
 	bot.on(Events.MessageCreate, async (msg) => _handle_message(msg, bot));
 }
+
+const triggered_channels = new Set<Snowflake>();
 
 async function _handle_message(msg: Message, bot: Senku) {
 	if (msg.author.bot || !msg.content) return;
@@ -12,9 +15,12 @@ async function _handle_message(msg: Message, bot: Senku) {
 	if (!msg.channel.isSendable()) return;
 
 	const msg_says_name = msg.content.toLocaleLowerCase().includes(bot.self.username.toLowerCase());
-	if (!msg.mentions.has(bot.self) && !msg_says_name) {
+	const should_senku_trigger = triggered_channels.has(msg.channelId);
+	if (!msg.mentions.has(bot.self) && !msg_says_name && !should_senku_trigger) {
 		if (!msg.channel.isDMBased()) return;
 	}
+
+	if (should_senku_trigger) triggered_channels.delete(msg.channelId);
 
 	await msg.channel.sendTyping();
 
@@ -28,52 +34,28 @@ async function _handle_message(msg: Message, bot: Senku) {
 
 	ctx_msgs.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-	if (!(await _handle_response(msg, msg.channel, ctx_msgs))) return;
-
-	if (msg.channel.isDMBased()) return;
-	const msgs = await msg.channel.awaitMessages({
-		max: 1,
-		time: 100 * 60 * 1000, // 1 minute
-		filter: (m) => !m.author.equals(bot.self),
-	});
-	const recent = msgs.first();
-	if (!recent) return;
-	await msg.channel.sendTyping();
-	await _handle_response(recent, msg.channel, ctx_msgs);
+	const did_respond = await _handle_response(msg, msg.channel, ctx_msgs);
+	if (did_respond && !msg.channel.isDMBased() && !should_senku_trigger) triggered_channels.add(msg.channelId);
 }
 
 async function _handle_response(msg: Message, channel: SendableChannels, ctx_msgs: Collection<string, Message>) {
-	let res: string | undefined;
-	try {
-		res = await request(msg, ctx_msgs);
-	} catch (e) {
-		console.error('Error processing message:', e);
-		await msg.reply({
-			content: 'An error occurred while processing your message. Please try again later.',
-			allowedMentions: { repliedUser: false },
-		});
-		return 0;
-	}
-	if (!res) {
-		await msg.reply({
-			content: "Sorry, I couldn't generate a response for your message.",
-			allowedMentions: { repliedUser: false },
-		});
-		return 0;
+	// let res: string | undefined
+
+	const res = await request(msg, ctx_msgs);
+
+	const reply = await channel.send({
+		content: bot.thinking,
+	});
+
+	const streamer = new MessageStreamer(reply, { interval: 500 });
+
+	streamer.start();
+
+	for await (const chunk of res.textStream) {
+		streamer.write(chunk);
 	}
 
-	if (res.length > 2000) {
-		console.log(res);
-		const file = new AttachmentBuilder(Buffer.from(res), { name: `${msg.id}_response.txt` });
-		await msg.reply({
-			content: 'the response is too long. here is a file containing the full message',
-			allowedMentions: { repliedUser: false },
-			files: [file],
-		});
-		return 0;
-	}
-	await channel.send({
-		content: res,
-	});
-	return 1;
+	await streamer.finish();
+
+	return true;
 }

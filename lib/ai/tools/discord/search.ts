@@ -1,12 +1,11 @@
-import { tool } from '@openai/agents-core';
 import { type APIMessageSearchResult, Routes } from '@warsam-e/echo';
+import { tool } from 'ai';
 import z from 'zod';
 import { bot } from '$index.ts';
 
 export default tool({
-	name: 'discord_search',
 	description: 'Search for messages in a Discord server / channel.',
-	parameters: z.object({
+	inputSchema: z.object({
 		server: z.string().describe('The ID of the Discord server to search in.'),
 		query: z.string().describe('Filter messages by content (max 1024 characters)'),
 	}),
