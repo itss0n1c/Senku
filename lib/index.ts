@@ -3,10 +3,12 @@ import Echo, {
 	DefaultWebSocketManagerOptions,
 	GatewayIntentBits,
 	Partials,
+	type Snowflake,
 	Team,
 	type User,
 } from '@warsam-e/echo';
 import cmds from '$cmds/index.ts';
+import { db } from '$db/index.ts';
 import { emojis } from '$emojis.ts';
 import { env } from '$utils/index.ts';
 import { watcher } from '$watcher.ts';
@@ -73,6 +75,13 @@ export class Senku extends Echo {
 		if (!this.user) throw new Error('Bot user not found');
 		return this.user;
 	}
+
+	settings = {
+		channel_ctx_limit: async (channel_id: Snowflake) =>
+			(await db.get<number>(`channel:${channel_id}:ctx_limit`)) ?? 10,
+		set_channel_ctx_limit: async (channel_id: Snowflake, limit: number) =>
+			await db.set(`channel:${channel_id}:ctx_limit`, limit),
+	};
 
 	static async start() {
 		const bot = await new Senku().registerCommands(cmds).init(env.BOT_TOKEN);

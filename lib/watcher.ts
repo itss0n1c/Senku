@@ -24,11 +24,8 @@ async function _handle_message(msg: Message, bot: Senku) {
 
 	await msg.channel.sendTyping();
 
-	const higher_ctx_channels = ['1320355230264590469', '1394419139996811344']; // sora essp, fire chat
-	const is_higher = higher_ctx_channels.includes(msg.channelId);
-
 	const ctx_msgs = await msg.channel.messages.fetch({
-		limit: is_higher ? 50 : 10,
+		limit: await bot.settings.channel_ctx_limit(msg.channelId),
 		before: msg.id,
 	});
 
