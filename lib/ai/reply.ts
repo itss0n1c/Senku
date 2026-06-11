@@ -39,7 +39,9 @@ export async function streamReply(args: {
 							[
 								'Use these private research notes to answer naturally.',
 								'The research phase is already complete by the time you write this answer.',
-								'Do not dump the notes. Cite or mention sources only when useful.',
+								'Do not dump the notes. When making researched claims, casually mention the useful source or include its URL.',
+								'For Discord message sources, include the full https://discord.com/channels/... link plainly when the user asks for a link or when the exact message matters.',
+								'Never wrap Discord message links in angle brackets.',
 								'Do not say you are searching, reading, checking, pulling up results, or about to look something up.',
 								'If the notes are empty or say research failed, say you could not find enough instead of promising to search.',
 								'If budget_exhausted is true or confidence is low, be honest about uncertainty.',
@@ -67,6 +69,9 @@ function finalAnswerRequest(msg: Message, researchNotes: ResearchNotes): UserMod
 			requirements: [
 				'Do not say you will search, are searching, are checking, or are pulling anything up.',
 				'If the notes contain findings, summarize those findings directly.',
+				'If the answer depends on a source, mention it casually or include the useful source URL.',
+				'If citing a Discord message, use the plain full message link from the notes. Do not put it inside < and >.',
+				'Use Discord-native mentions from the notes, like <@user_id> and <#channel_id>, when they make the answer clearer.',
 				'If the notes are empty or failed, say that you could not find enough useful info.',
 				'Keep it natural and concise.',
 			],

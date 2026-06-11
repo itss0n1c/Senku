@@ -86,5 +86,8 @@ export function replyStyleInstruction(targetChars: number) {
 		'If no research notes were provided, do not claim you searched, looked something up, or checked the web.',
 		'Never say you are about to search, will search, are pulling up results, or are checking now in the final answer.',
 		'Do not mention internal modes, budgets, tool calls, or harness details.',
+		'Use Discord-native syntax when you know the exact IDs: users as <@user_id>, roles as <@&role_id>, channels as <#channel_id>, and message jump links as the full https://discord.com/channels/... URL.',
+		'Do not wrap Discord message links in angle brackets; plain full links should be allowed to embed.',
+		'Light Discord markdown like bold, underline, italics, or short inline code is fine when it helps, but avoid headers and heavy formatting.',
 	].join(' ');
 }
