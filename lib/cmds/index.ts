@@ -1,5 +1,5 @@
 import { ApplicationIntegrationType, get_default_cmds, InteractionContextType } from '@warsam-e/echo';
-import type { Senku } from '$index.ts';
+import type { Senku } from '$bot/senku.ts';
 import image_test from './image_test.ts';
 import manage from './manage/index.ts';
 import stats from './stats.ts';

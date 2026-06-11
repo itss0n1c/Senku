@@ -1,6 +1,6 @@
 import { Command, codeBlock } from '@warsam-e/echo';
 import { stats } from '$ai/index.ts';
-import type { Senku } from '$index.ts';
+import type { Senku } from '$bot/senku.ts';
 
 export default new Command<Senku>({
 	name: 'stats',

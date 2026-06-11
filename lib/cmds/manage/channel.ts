@@ -7,7 +7,7 @@ import {
 	MessageFlags,
 	type SendableChannels,
 } from '@warsam-e/echo';
-import type { Senku } from '$index.ts';
+import type { Senku } from '$bot/senku.ts';
 
 export default [
 	new Command<Senku>({

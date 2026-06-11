@@ -1,15 +1,15 @@
 import { type Collection, Events, type Message, type SendableChannels, type Snowflake } from '@warsam-e/echo';
-import { bot, type Senku } from '$index.ts';
+import { request } from '$ai/request.ts';
+import type { Senku } from '$bot/senku.ts';
 import { MessageStreamer } from '$stream.ts';
-import { request } from './ai/index.ts';
 
-export function watcher(bot: Senku) {
-	bot.on(Events.MessageCreate, async (msg) => _handle_message(msg, bot));
+export function registerMessageEvents(bot: Senku) {
+	bot.on(Events.MessageCreate, async (msg) => handleMessage(msg, bot));
 }
 
 const triggered_channels = new Set<Snowflake>();
 
-async function _handle_message(msg: Message, bot: Senku) {
+async function handleMessage(msg: Message, bot: Senku) {
 	if (msg.author.bot || !msg.content) return;
 
 	if (!msg.channel.isSendable()) return;
@@ -31,14 +31,17 @@ async function _handle_message(msg: Message, bot: Senku) {
 
 	ctx_msgs.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-	const did_respond = await _handle_response(msg, msg.channel, ctx_msgs);
+	const did_respond = await handleResponse(bot, msg, msg.channel, ctx_msgs);
 	if (did_respond && !msg.channel.isDMBased() && !should_senku_trigger) triggered_channels.add(msg.channelId);
 }
 
-async function _handle_response(msg: Message, channel: SendableChannels, ctx_msgs: Collection<string, Message>) {
-	// let res: string | undefined
-
-	const res = await request(msg, ctx_msgs);
+async function handleResponse(
+	bot: Senku,
+	msg: Message,
+	channel: SendableChannels,
+	ctx_msgs: Collection<string, Message>,
+) {
+	const res = await request(bot, msg, ctx_msgs);
 
 	const reply = await channel.send({
 		content: bot.thinking,

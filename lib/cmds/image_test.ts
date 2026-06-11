@@ -1,7 +1,7 @@
 import { ApplicationCommandOptionType, Command, codeBlock } from '@warsam-e/echo';
 import { inspect } from 'bun';
 import { gemini_describe_image } from '$ai/gemini.ts';
-import type { Senku } from '$index.ts';
+import type { Senku } from '$bot/senku.ts';
 
 export default new Command<Senku>({
 	name: 'image_test',
