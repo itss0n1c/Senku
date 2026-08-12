@@ -1,8 +1,7 @@
 import { GuildMember, type Message, MessageReferenceType } from '@warsam-e/echo';
 import type { AssistantModelMessage, SystemModelMessage, UserModelMessage } from 'ai';
 import type { Senku } from '$bot/senku.ts';
-import { try_prom } from '$utils/index.ts';
-import { gemini_describe_image } from './gemini.ts';
+import { attachmentContentType, attachmentFilename, readDiscordAttachment } from './attachments.ts';
 
 export const system = (content: string): SystemModelMessage => ({ role: 'system', content });
 export const user = (content: string): UserModelMessage => ({ role: 'user', content });
@@ -109,21 +108,7 @@ async function messageContent(
 			? await msg.channel.messages.fetch(msg.reference.messageId)
 			: undefined;
 
-	const attachments_ctx: Array<{
-		url: string;
-		description: string;
-	}> = [];
-
-	if (msg.id === orig.id) {
-		for (const attachment of msg.attachments.values()) {
-			const description = attachment.description ?? (await try_prom(gemini_describe_image(attachment.url)));
-			if (!description) continue;
-			attachments_ctx.push({
-				url: attachment.url,
-				description,
-			});
-		}
-	}
+	const attachments_ctx = await attachmentContext(msg, msg.id === orig.id);
 
 	const content = JSON.stringify({
 		...messageJson(msg),
@@ -145,4 +130,71 @@ export async function historyContext(bot: Senku, msg: Message, ctx_msgs: Iterabl
 	messages.push(await messageContent(bot, msg, msg));
 
 	return messages;
+}
+
+async function attachmentContext(msg: Message, readContents: boolean) {
+	const attachments_ctx: Array<{
+		url: string;
+		filename: string;
+		content_type: string;
+		kind?: 'text' | 'image';
+		text?: string;
+		truncated?: boolean;
+		error?: string;
+	}> = [];
+
+	for (const attachment of msg.attachments.values()) {
+		const filename = attachmentFilename({
+			url: attachment.url,
+			name: attachment.name,
+			contentType: attachment.contentType,
+			description: attachment.description,
+			size: attachment.size,
+		});
+		const content_type = attachmentContentType({
+			url: attachment.url,
+			name: attachment.name,
+			contentType: attachment.contentType,
+			description: attachment.description,
+			size: attachment.size,
+		});
+
+		if (!readContents) {
+			attachments_ctx.push({
+				url: attachment.url,
+				filename,
+				content_type,
+			});
+			continue;
+		}
+
+		const result = await readDiscordAttachment({
+			url: attachment.url,
+			name: attachment.name,
+			contentType: attachment.contentType,
+			description: attachment.description,
+			size: attachment.size,
+		});
+
+		if (result.ok) {
+			attachments_ctx.push({
+				url: result.url,
+				filename: result.filename,
+				content_type: result.content_type,
+				kind: result.kind,
+				text: result.text,
+				truncated: result.truncated,
+			});
+			continue;
+		}
+
+		attachments_ctx.push({
+			url: result.url,
+			filename: result.filename,
+			content_type: result.content_type,
+			error: result.error,
+		});
+	}
+
+	return attachments_ctx;
 }

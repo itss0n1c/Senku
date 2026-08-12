@@ -28,7 +28,7 @@ export function registerMessageEvents(bot: Senku) {
 const triggered_channels = new Set<Snowflake>();
 
 async function handleMessage(msg: Message, bot: Senku) {
-	if (msg.author.bot || !msg.content) {
+	if (msg.author.bot || (!msg.content && !msg.attachments.size)) {
 		console.log('[message] ignored', {
 			message_id: msg.id,
 			channel_id: msg.channelId,
@@ -49,6 +49,7 @@ async function handleMessage(msg: Message, bot: Senku) {
 	const msg_says_name = msg.content.toLocaleLowerCase().includes(bot.self.username.toLowerCase());
 	const should_senku_trigger = triggered_channels.has(msg.channelId);
 	const mentioned = msg.mentions.has(bot.self);
+	const has_attachments = msg.attachments.size > 0;
 
 	console.log('[message] received', {
 		message_id: msg.id,
@@ -58,7 +59,9 @@ async function handleMessage(msg: Message, bot: Senku) {
 		mentioned,
 		msg_says_name,
 		should_senku_trigger,
+		has_attachments,
 		content_chars: msg.content.length,
+		attachment_count: msg.attachments.size,
 	});
 
 	if (!mentioned && !msg_says_name && !should_senku_trigger) {

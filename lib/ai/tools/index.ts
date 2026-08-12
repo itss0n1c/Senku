@@ -19,7 +19,10 @@ export const createTools = (bot: Senku, options: ToolOptions = {}) => {
 	if (options.msg && !options.msg.channel.isDMBased()) {
 		return {
 			...tools,
-			...createDiscordTools(bot, options.msg),
+			...createDiscordTools(bot, options.msg, {
+				onStatus: options.onStatus,
+				pageChars: options.pageChars,
+			}),
 		};
 	}
 

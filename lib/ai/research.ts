@@ -58,6 +58,7 @@ export async function research(args: {
 					[
 						'You are Senku doing private research before a Discord reply.',
 						'Use discordSearchMessages when the user asks about prior Discord/server conversation or server memory.',
+						'Use discordReadAttachment to read Discord attachment URLs returned by discordSearchMessages or present in the conversation context. Prefer this over openWebpage for Discord CDN links.',
 						'Use webSearch for all search engine queries. Never open Google, Bing, DuckDuckGo, GitHub search, or other search-result pages with openWebpage.',
 						'Use openWebpage only for specific resource pages from webSearch results or already-known canonical pages.',
 						'Gather enough to answer, then stop.',
@@ -170,6 +171,8 @@ function notesFromToolResults(steps: Array<{ toolResults: Array<{ toolName: stri
 			if (result.toolName === 'openWebpage') addPageResult(result.output, findings, sources);
 
 			if (result.toolName === 'discordSearchMessages') addDiscordSearchResult(result.output, findings, sources);
+
+			if (result.toolName === 'discordReadAttachment') addAttachmentResult(result.output, findings, sources);
 		}
 	}
 
@@ -259,6 +262,38 @@ function addDiscordSearchResult(output: unknown, findings: string[], sources: Re
 		if (url) sources.push({ title, url, note });
 		findings.push(note);
 	}
+}
+
+function addAttachmentResult(output: unknown, findings: string[], sources: ResearchNotes['sources']) {
+	if (!output || typeof output !== 'object') return;
+	const attachment = output as {
+		ok?: unknown;
+		url?: unknown;
+		filename?: unknown;
+		kind?: unknown;
+		text?: unknown;
+		error?: unknown;
+	};
+	if (typeof attachment.url !== 'string') return;
+
+	const filename =
+		typeof attachment.filename === 'string' && attachment.filename ? attachment.filename : attachment.url;
+	const title = `Discord attachment ${filename}`;
+
+	if (attachment.ok !== true) {
+		const error = typeof attachment.error === 'string' ? attachment.error : 'Attachment could not be read.';
+		sources.push({ title, url: attachment.url, note: error });
+		return;
+	}
+
+	const text = typeof attachment.text === 'string' ? attachment.text.trim() : '';
+	const kind = typeof attachment.kind === 'string' ? attachment.kind : 'attachment';
+	const note = text
+		? `${kind}: ${text.slice(0, 280)}`
+		: `${kind} attachment opened but had little extractable content.`;
+
+	sources.push({ title, url: attachment.url, note });
+	if (text) findings.push(`${title}: ${note}`);
 }
 
 function uniqueByUrl(sources: ResearchNotes['sources']) {
