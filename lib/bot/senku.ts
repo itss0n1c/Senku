@@ -1,6 +1,4 @@
-import Echo, { bold, GatewayIntentBits, Partials, User } from '@warsam-e/echo';
-import { emojis } from '$emojis.ts';
-import { SettingsStore } from '$settings/index.ts';
+import Echo, { GatewayIntentBits, Partials, User } from '@warsam-e/echo';
 
 export class Senku extends Echo {
 	constructor() {
@@ -47,18 +45,12 @@ export class Senku extends Echo {
 		});
 	}
 
-	settings = new SettingsStore();
-
 	is_admin(user: User) {
 		if (!this.application) throw new Error('Application not found');
 		const team = this.application.owner;
 		if (!team) throw new Error('Application owner not found');
 		if (team instanceof User) return team.equals(user);
 		return team.members.some((m) => m.user.equals(user));
-	}
-
-	get thinking() {
-		return `${emojis.typing} ${bold(this.name)} is thinking...`;
 	}
 
 	get self() {

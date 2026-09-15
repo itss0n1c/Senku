@@ -4,4 +4,3 @@ dist/
 .direnv/
 .env*
 !.envrc
-assets/

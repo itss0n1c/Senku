@@ -5,26 +5,23 @@
 	"scripts": {
 		"dev": "bun --watch ./lib/index.ts",
 		"start": "bun ./lib/index.ts",
-		"check": "biome check ./lib/**/*"
+		"check": "biome check ./lib/**/*",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate"
 	},
 	"devDependencies": {
 		"@types/bun": "1.4.2",
 		"@typescript/native": "npm:typescript@7.0.2",
+		"drizzle-kit": "^0.31.10",
 		"typescript": "~6.0.0"
 	},
 	"dependencies": {
-		"@ai-sdk/deepseek": "3.0.45",
-		"@google/genai": "2.22.0",
+		"@tanstack/ai": "^0.54.0",
+		"@tanstack/ai-openai": "^0.22.6",
 		"@warsam-e/echo": "7.4.2",
-		"ai": "7.0.102",
 		"arkenv": "0.12.3",
 		"arktype": "2.2.3",
-		"bun.db": "1.1.5",
-		"searxng": "0.0.5",
-		"zod": "4.6.5"
-	},
-	"trustedDependencies": [
-		"@google/genai",
-		"protobufjs"
-	]
+		"drizzle-orm": "^0.45.2",
+		"postgres": "^3.4.9"
+	}
 }

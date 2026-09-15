@@ -12,12 +12,9 @@ WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json tsconfig.json ./
 COPY lib ./lib
+COPY migrations ./migrations
 
 ENV NODE_ENV=production
-
-RUN mkdir /app/assets && chown bun:bun /app/assets
-
-VOLUME ["/app/assets"]
 
 USER bun
 
