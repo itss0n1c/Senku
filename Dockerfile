@@ -10,7 +10,7 @@ FROM oven/bun:1.4.2-slim AS runtime
 WORKDIR /app
 
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY package.json ./
+COPY package.json tsconfig.json ./
 COPY lib ./lib
 
 ENV NODE_ENV=production
