@@ -65,6 +65,24 @@ export class ConversationCoordinator {
 			console.info('[conversation:message] ignored', { messageId: message.id, reason: 'empty message' });
 			return;
 		}
+		if (!message.channel.isDMBased()) {
+			const mentioned = message.mentions.has(this.bot.self);
+			const named = /\bsenku\b/i.test(message.content);
+			if (!mentioned && !named) {
+				console.info('[conversation:message] ignored', {
+					messageId: message.id,
+					channelId: message.channelId,
+					reason: 'Senku was not mentioned or named',
+				});
+				return;
+			}
+			console.info('[conversation:message] server trigger accepted', {
+				messageId: message.id,
+				channelId: message.channelId,
+				mentioned,
+				named,
+			});
+		}
 		const state = this.state(message.channelId);
 		state.lastHumanActivity = Date.now();
 		state.generation += 1;
