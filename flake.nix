@@ -12,7 +12,6 @@
         zsh
         bun
         biome
-        nodejs_22
       ];
     };
   };

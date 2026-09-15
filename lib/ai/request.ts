@@ -18,7 +18,7 @@ export async function request(args: {
 		channel_id: msg.channelId,
 		ctx_count: ctx_msgs.size,
 	});
-	const instructions = await Bun.file(join(proj_root, 'assets/system.md')).text();
+	const instructions = await Bun.file(join(proj_root, 'lib/system.md')).text();
 	console.log('[ai:request] instructions loaded', {
 		message_id: msg.id,
 		channel_id: msg.channelId,

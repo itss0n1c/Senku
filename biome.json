@@ -1,8 +1,8 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
 	"assist": { "actions": { "source": { "organizeImports": "on" } } },
 	"files": {
-		"includes": ["**", "!!dist", "!!docs", "!!**/*.js"]
+		"includes": ["**", "!!**/*.js", "!!node_modules", "!!assets"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -10,21 +10,35 @@
 		"indentWidth": 4,
 		"indentStyle": "tab"
 	},
+	"html": {
+		"experimentalFullSupportEnabled": true
+	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "single"
 		}
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"suspicious": {
 				"noAssignInExpressions": "off"
 			},
 			"correctness": {
-				"noUnusedImports": "error",
-				"noUnusedVariables": "error",
+				"noUnusedImports": {
+					"level": "warn",
+					"fix": "safe"
+				},
+				"noUnusedVariables": {
+					"level": "warn",
+					"fix": "safe"
+				},
 				"useImportExtensions": "error"
 			},
 			"style": {
