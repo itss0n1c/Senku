@@ -41,6 +41,8 @@ async function serializeMessage(message: Message) {
 
 export async function modelMessages(bot: Senku, messages: Message[]): Promise<AIModelMessage[]> {
 	const output: AIModelMessage[] = [];
+	let imageCount = 0;
+	let imageBytes = 0;
 	for (const message of messages) {
 		if (message.author.equals(bot.self)) {
 			output.push({ role: 'assistant', content: message.content });
@@ -50,10 +52,51 @@ export async function modelMessages(bot: Senku, messages: Message[]): Promise<AI
 		const parts: ContentPart[] = [{ type: 'text', content: JSON.stringify(await serializeMessage(message)) }];
 		for (const attachment of message.attachments.values()) {
 			if (!attachment.contentType?.startsWith('image/')) continue;
-			parts.push({
-				type: 'image',
-				source: { type: 'url', value: attachment.url, mimeType: attachment.contentType },
-			});
+			if (imageCount >= 10 || imageBytes + attachment.size > 40 * 1024 * 1024) {
+				console.warn('[agent:context] image skipped due to request limits', {
+					messageId: message.id,
+					attachmentId: attachment.id,
+					size: attachment.size,
+				});
+				continue;
+			}
+			try {
+				console.info('[agent:context] downloading Discord image', {
+					messageId: message.id,
+					attachmentId: attachment.id,
+					size: attachment.size,
+				});
+				const response = await fetch(attachment.url, { signal: AbortSignal.timeout(15_000) });
+				if (!response.ok) throw new Error(`Discord CDN returned ${response.status}`);
+				const mimeType = response.headers.get('content-type')?.split(';')[0] ?? attachment.contentType;
+				if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)) {
+					throw new Error(`Unsupported image type: ${mimeType}`);
+				}
+				const bytes = await response.arrayBuffer();
+				if (bytes.byteLength > 32 * 1024 * 1024) throw new Error('Image exceeds DeepSeek’s 32 MiB limit');
+				imageCount += 1;
+				imageBytes += bytes.byteLength;
+				parts.push({
+					type: 'image',
+					source: { type: 'data', value: Buffer.from(bytes).toString('base64'), mimeType },
+				});
+				console.info('[agent:context] Discord image embedded', {
+					messageId: message.id,
+					attachmentId: attachment.id,
+					bytes: bytes.byteLength,
+					mimeType,
+				});
+			} catch (error) {
+				console.warn('[agent:context] Discord image unavailable', {
+					messageId: message.id,
+					attachmentId: attachment.id,
+					error,
+				});
+				parts.push({
+					type: 'text',
+					content: `[Image attachment ${attachment.name} could not be loaded.]`,
+				});
+			}
 		}
 		output.push({ role: 'user', content: parts });
 	}

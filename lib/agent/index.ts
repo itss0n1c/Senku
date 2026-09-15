@@ -17,7 +17,7 @@ const participationPrompt = `Decide whether Senku would naturally take a turn in
 Choose reply when he was greeted, addressed, asked something, is already participating, has something genuinely worthwhile or funny to add, or joining would feel socially natural.
 Choose react when a lightweight acknowledgement is more natural than words. Choose ignore when people are talking among themselves or he has nothing useful to add.
 Silence is allowed but is not the default. A direct greeting or message aimed at Senku should almost always receive a reply. Do not behave like customer support. Keep the reason private and brief.
-Return only JSON matching: {"action":"ignore"|"react"|"reply","reaction"?:string,"reason"?:string}.`;
+Return only JSON matching: {"action":"ignore"|"react"|"reply","reaction"?:string|null,"reason"?:string|null}.`;
 
 export async function decideParticipation(bot: Senku, messages: Message[], abortController: AbortController) {
 	const startedAt = performance.now();

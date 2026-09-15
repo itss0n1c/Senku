@@ -2,8 +2,8 @@ import { type } from 'arktype';
 
 export const participationDecision = type({
 	action: "'ignore' | 'react' | 'reply'",
-	'reaction?': 'string',
-	'reason?': 'string',
+	'reaction?': 'string | null',
+	'reason?': 'string | null',
 });
 
 export const responsePlan = type({
